@@ -1,5 +1,27 @@
-use brainfuck_interpreter;
+use brainfuck_interpreter::BrainfuckProgram;
+    use brainfuck_interpreter::BrainfuckInstructions::{
+        IncreasePointer, // >
+        DecreasePointer, // <
+        IncreaseValue,   // +
+        DecreaseValue,   // -
+        BeginLoop,       // [
+        EndLoop,         // ]
+        PrintCell,       // .
+        WriteToCell,     // ,
+    };
 
 fn main() {
-    brainfuck_interpreter::hello_world();
+    let instructions = vec![
+        IncreasePointer,
+        DecreasePointer,
+        IncreaseValue,
+        DecreaseValue,
+        BeginLoop,
+        EndLoop,
+        PrintCell,
+        WriteToCell
+    ];
+
+    let _program = BrainfuckProgram::new(instructions);
 }
+

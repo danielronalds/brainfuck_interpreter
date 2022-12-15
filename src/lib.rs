@@ -12,13 +12,23 @@ pub enum BrainfuckInstructions {
 }
 
 /// Const for how large the array is
-const PROGRAM_ARRAY_LENGTH: usize = 256;
+const MEMORY_ARRAY_LENGTH: usize = 256;
 
 /// Struct to represent Brainfuck program
 pub struct BrainfuckProgram {
-    program_array: [u32; PROGRAM_ARRAY_LENGTH],
+    /// The array of memory that the program modifies
+    memory_array: [u32; MEMORY_ARRAY_LENGTH],
+
+    /// The instructions for the program to run
     instructions: Vec<BrainfuckInstructions>,
+
+    /// The pointer contains the index of the current cell in the memory array
     pointer: usize,
+
+    /// The index of the current instruction in the instructions vec
+    program_counter: usize,
+
+    /// The return address for storing the instruction that the loop begins in
     return_address: usize,
 }
 
@@ -29,9 +39,10 @@ impl BrainfuckProgram {
     /// instructions:   The list of instructions for the program to run
     pub fn new(instructions: Vec<BrainfuckInstructions>) -> BrainfuckProgram {
         BrainfuckProgram {
-            program_array: [0; PROGRAM_ARRAY_LENGTH],
+            memory_array: [0; MEMORY_ARRAY_LENGTH],
             instructions,
             pointer: 0,
+            program_counter: 0,
             return_address: 0,
         }
     }

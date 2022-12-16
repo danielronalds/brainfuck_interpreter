@@ -35,7 +35,6 @@ pub struct BrainfuckProgram {
 use BrainfuckInstructions::*;
 
 impl BrainfuckProgram {
-
     /// Creates a new BrainfuckProgram
     ///
     /// Parameters
@@ -61,13 +60,13 @@ impl BrainfuckProgram {
                     if self.pointer < (MEMORY_ARRAY_LENGTH - 1) {
                         self.pointer += 1;
                     }
-                },
+                }
                 // < Instruction
                 DecreasePointer => {
                     if self.pointer != 0 {
                         self.pointer -= 1;
                     }
-                },
+                }
                 // + Instruction
                 IncreaseValue => {
                     if self.memory_array[self.pointer] != u8::MAX {
@@ -108,7 +107,7 @@ impl BrainfuckProgram {
             // Increasing the program counter to move onto the next instruction on the next loop
             self.program_counter += 1;
         }
-    } 
+    }
 
     /// Pops of the last return address added and returns it
     fn pop_last_return_address(&mut self) -> usize {
@@ -123,8 +122,6 @@ impl BrainfuckProgram {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::BrainfuckInstructions::{
@@ -136,7 +133,7 @@ mod tests {
         IncreaseValue,   // +
         PrintCell,       // .
         WriteToCell,     // ,
-    }; 
+    };
 
     use super::MEMORY_ARRAY_LENGTH;
 
@@ -179,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    /// Tests if IncreasePointer, DecreasePointer, IncreaseValue, and DecreaseValue Instructions 
+    /// Tests if IncreasePointer, DecreasePointer, IncreaseValue, and DecreaseValue Instructions
     /// works
     fn first_four_instructions_works() {
         // The instruction set to test
@@ -192,7 +189,7 @@ mod tests {
             DecreaseValue,
             IncreasePointer,
             IncreasePointer,
-            IncreaseValue
+            IncreaseValue,
         ];
 
         // Creating the Brainfuck program and running it
@@ -220,13 +217,12 @@ mod tests {
             IncreaseValue, // 3
             IncreaseValue,
             IncreaseValue,
-
             BeginLoop,
-                DecreaseValue,
-                DecreasePointer,
-                IncreaseValue,
-                IncreasePointer,
-            EndLoop
+            DecreaseValue,
+            DecreasePointer,
+            IncreaseValue,
+            IncreasePointer,
+            EndLoop,
         ];
 
         // Creating the Brainfuck program and running it

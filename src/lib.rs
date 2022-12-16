@@ -29,7 +29,7 @@ pub struct BrainfuckProgram {
     program_counter: usize,
 
     /// The return address for storing the instruction that the loop begins in
-    return_address: usize,
+    return_address_vec: Vec<usize>,
 }
 
 use BrainfuckInstructions::*;
@@ -46,7 +46,7 @@ impl BrainfuckProgram {
             instructions,
             pointer: 0,
             program_counter: 0,
-            return_address: 0,
+            return_address_vec: Vec::new(),
         }
     }
 
@@ -80,6 +80,23 @@ impl BrainfuckProgram {
                         self.memory_array[self.pointer] -= 1;
                     }
                 }
+                // [ Instruction
+                BeginLoop => {
+                    // Adding the value of this instruction to the vec of return address.
+                    // A vec is used so that nested loops work
+                    self.return_address_vec.push(self.program_counter.clone());
+                }
+                // ] Instruction
+                EndLoop => {
+                    // If the current cell is not = to 0 then loop
+                    if self.memory_array[self.pointer] != 0 {
+                        // Setting the program counter back to the start of the loop
+                        self.program_counter = self.pop_last_return_address();
+                        // Skiping the rest of the loop so that the program counter is not
+                        // incremented
+                        continue;
+                    }
+                }
                 // . Instruction
                 // NEED TO TEST THIS, I dont actually know if this works or not
                 PrintCell => {
@@ -92,7 +109,21 @@ impl BrainfuckProgram {
             self.program_counter += 1;
         }
     } 
+
+    /// Pops of the last return address added and returns it
+    fn pop_last_return_address(&mut self) -> usize {
+        // Getting the index
+        let index = self.return_address_vec.len() - 1;
+
+        // Cloning the return address and removing it
+        let return_address = self.return_address_vec[index].clone();
+        self.return_address_vec.remove(index);
+
+        return_address
+    }
 }
+
+
 
 #[cfg(test)]
 mod tests {
@@ -131,6 +162,23 @@ mod tests {
     }
 
     #[test]
+    /// tests if the pop_last_return_address method works
+    fn pop_last_return_address_works() {
+        let instructions = Vec::new();
+
+        let mut program = BrainfuckProgram::new(instructions);
+
+        program.return_address_vec.push(1);
+        program.return_address_vec.push(2);
+        program.return_address_vec.push(4);
+
+        let return_address = program.pop_last_return_address();
+
+        assert_eq!(return_address, 4);
+        assert_eq!(vec![1, 2], program.return_address_vec)
+    }
+
+    #[test]
     /// Tests if IncreasePointer, DecreasePointer, IncreaseValue, and DecreaseValue Instructions 
     /// works
     fn first_four_instructions_works() {
@@ -158,5 +206,35 @@ mod tests {
 
         // Testing if they are the same
         assert!(expected_array.iter().eq(program.memory_array.iter()))
+    }
+
+    #[test]
+    /// Tests if looping works
+    fn loops_work() {
+        // A sum numbers program that uses a loop
+        let sum_two_numbers = vec![
+            // Setting up the two numbers to add
+            IncreaseValue, // 2
+            IncreaseValue,
+            IncreasePointer,
+            IncreaseValue, // 3
+            IncreaseValue,
+            IncreaseValue,
+
+            BeginLoop,
+                DecreaseValue,
+                DecreasePointer,
+                IncreaseValue,
+                IncreasePointer,
+            EndLoop
+        ];
+
+        // Creating the Brainfuck program and running it
+        let mut program = BrainfuckProgram::new(sum_two_numbers);
+        program.run();
+
+        // Asserting that the program ran as expected
+        assert_eq!(program.memory_array[0], 5);
+        assert_eq!(program.memory_array[1], 0)
     }
 }

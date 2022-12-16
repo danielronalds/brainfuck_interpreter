@@ -80,6 +80,11 @@ impl BrainfuckProgram {
                         self.memory_array[self.pointer] -= 1;
                     }
                 }
+                // . Instruction
+                // NEED TO TEST THIS, I dont actually know if this works or not
+                PrintCell => {
+                    print!("{}", self.memory_array[self.pointer] as char);
+                }
                 _ => (),
             }
 

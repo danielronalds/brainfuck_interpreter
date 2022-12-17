@@ -1,3 +1,6 @@
+//! A Brainfuck (or Brainf*ck) interpreter based on the specifications written in:
+//! https://github.com/brain-lang/brainfuck/blob/master/brainfuck.md
+
 /// Enum for representing all possible brainfuck instructions
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BrainfuckInstructions {
@@ -69,13 +72,21 @@ impl BrainfuckProgram {
                 }
                 // + Instruction
                 IncreaseValue => {
-                    if self.memory_array[self.pointer] != u8::MAX {
+                    if self.memory_array[self.pointer] == u8::MAX {
+                        // Simulate an overflow if the cell's current value is 255
+                        self.memory_array[self.pointer] = 0;
+                    } else {
+                        // Else just increment the value
                         self.memory_array[self.pointer] += 1;
                     }
                 }
                 // - Instruction
                 DecreaseValue => {
-                    if self.memory_array[self.pointer] != 0 {
+                    if self.memory_array[self.pointer] == 0 {
+                        // Simulate an overflow if the cell's current value is 0
+                        self.memory_array[self.pointer] = u8::MAX;
+                    } else {
+                        // Else just increment the value
                         self.memory_array[self.pointer] -= 1;
                     }
                 }
@@ -203,6 +214,46 @@ mod tests {
 
         // Testing if they are the same
         assert!(expected_array.iter().eq(program.memory_array.iter()))
+    }
+
+    #[test]
+    fn overflow_works() {
+        // Testing 0 - 1 = 255
+        let instructions = vec![
+            DecreaseValue,
+        ];
+
+        let mut program = BrainfuckProgram::new(instructions);
+
+        program.run();
+
+        assert_eq!(program.memory_array[0], 255);
+
+        // Tesing 255 + 1 = 0
+        let instructions = vec![
+            // Setting the current cell to 16
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            // Entering the loop
+            BeginLoop,
+            // Adding second to the next cell
+            IncreasePointer,
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            DecreasePointer,
+            DecreaseValue,
+            EndLoop
+        ];
+
+        let mut program = BrainfuckProgram::new(instructions);
+
+        program.run();
+
+        assert_eq!(program.memory_array[1], 0)
     }
 
     #[test]

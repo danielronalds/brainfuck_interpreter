@@ -92,6 +92,22 @@ impl BrainfuckProgram {
                 }
                 // [ Instruction
                 BeginLoop => {
+                    // Jump if zero
+                    if self.memory_array[self.pointer] == 0 {
+                        let index = self.program_counter;
+
+                        for instruction in index..self.instructions.len() {
+                            match self.instructions[instruction] {
+                                EndLoop => {
+                                    // Set the program counter to the found ]
+                                    self.program_counter = instruction;
+                                    // Clear this from the return_address_vec
+                                    self.pop_last_return_address();
+                                },
+                                _ => continue,
+                            }
+                        }
+                    }
                     // Adding the value of this instruction to the vec of return address.
                     // A vec is used so that nested loops work
                     self.return_address_vec.push(self.program_counter);
@@ -283,5 +299,22 @@ mod tests {
         // Asserting that the program ran as expected
         assert_eq!(program.memory_array[0], 5);
         assert_eq!(program.memory_array[1], 0)
+    }
+
+    #[test]
+    /// Tests if BeginLoop jumpts
+    fn begin_loop_jumps_if_cell_is_zero() {
+        let instructions = vec![
+            BeginLoop,
+            // This will create an infinite loop if this loop is not skipped
+            IncreaseValue,
+            EndLoop,
+            DecreaseValue
+        ];
+
+        let mut program = BrainfuckProgram::new(instructions);
+        program.run();
+
+        assert_eq!(program.memory_array[0], 255);
     }
 }

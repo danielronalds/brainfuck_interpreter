@@ -83,7 +83,7 @@ impl BrainfuckProgram {
                 BeginLoop => {
                     // Adding the value of this instruction to the vec of return address.
                     // A vec is used so that nested loops work
-                    self.return_address_vec.push(self.program_counter.clone());
+                    self.return_address_vec.push(self.program_counter);
                 }
                 // ] Instruction
                 EndLoop => {
@@ -115,7 +115,7 @@ impl BrainfuckProgram {
         let index = self.return_address_vec.len() - 1;
 
         // Cloning the return address and removing it
-        let return_address = self.return_address_vec[index].clone();
+        let return_address = self.return_address_vec[index];
         self.return_address_vec.remove(index);
 
         return_address

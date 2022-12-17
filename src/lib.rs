@@ -116,8 +116,10 @@ impl BrainfuckProgram {
                 EndLoop => {
                     // If the current cell is not = to 0 then loop
                     if self.memory_array[self.pointer] != 0 {
-                        // Setting the program counter back to the start of the loop
-                        self.program_counter = self.pop_last_return_address();
+                        // Setting the program counter back to the start of the loop. An unwrap is
+                        // okay here because if the EndLoop is reached self.pop_last_return_address
+                        // should always return a Some()
+                        self.program_counter = self.pop_last_return_address().unwrap();
                         // Skiping the rest of the loop so that the program counter is not
                         // incremented
                         continue;
@@ -134,10 +136,14 @@ impl BrainfuckProgram {
             // Increasing the program counter to move onto the next instruction on the next loop
             self.program_counter += 1;
         }
+        self.print_memory_array();
     }
 
     /// Pops of the last return address added and returns it
-    fn pop_last_return_address(&mut self) -> usize {
+    fn pop_last_return_address(&mut self) -> Option<usize> {
+        if self.return_address_vec.len() == 0 {
+            return None;
+        }
         // Getting the index
         let index = self.return_address_vec.len() - 1;
 
@@ -145,7 +151,15 @@ impl BrainfuckProgram {
         let return_address = self.return_address_vec[index];
         self.return_address_vec.remove(index);
 
-        return_address
+        Some(return_address)
+    }
+
+    pub fn print_memory_array(&self) {
+        println!();
+        for i in 0..16 {
+            print!("{}, ", self.memory_array[i]);
+        }
+        println!();
     }
 }
 

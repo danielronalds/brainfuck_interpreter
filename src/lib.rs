@@ -30,9 +30,6 @@ pub struct BrainfuckProgram {
 
     /// The index of the current instruction in the instructions vec
     program_counter: usize,
-
-    /// The return address for storing the instruction that the loop begins in
-    return_address_vec: Vec<usize>,
 }
 
 use BrainfuckInstructions::*;
@@ -48,7 +45,6 @@ impl BrainfuckProgram {
             instructions,
             pointer: 0,
             program_counter: 0,
-            return_address_vec: Vec::new(),
         }
     }
 

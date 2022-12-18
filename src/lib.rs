@@ -15,7 +15,7 @@ pub enum BrainfuckInstructions {
 }
 
 /// Const for how large the array is
-const MEMORY_ARRAY_LENGTH: usize = 300;
+const MEMORY_ARRAY_LENGTH: usize = 30000;
 
 /// Struct to represent Brainfuck program
 pub struct BrainfuckProgram {
@@ -57,10 +57,10 @@ impl BrainfuckProgram {
         // This will run the program until the end of the instructions is run. We can't just loop
         // through them as loops will not work
         while self.program_counter != self.instructions.len() {
-            match &self.instructions[self.program_counter] {
+            match self.instructions[self.program_counter] {
                 // > Instruction
                 IncreasePointer => {
-                    if self.pointer < (MEMORY_ARRAY_LENGTH - 1) {
+                    if self.pointer != (MEMORY_ARRAY_LENGTH - 1) {
                         self.pointer += 1;
                     } else if debug {
                         println!("ERROR, cannot increase pointer! PC: {}", self.program_counter);
@@ -110,6 +110,7 @@ impl BrainfuckProgram {
                         }
                         continue;
                     }
+                    println!("Begin Loop!");
                 }
 
                 // ] Instruction
@@ -133,6 +134,10 @@ impl BrainfuckProgram {
                 }
 
                 WriteToCell => (),
+            }
+
+            if debug {
+                self.print_memory_array();
             }
 
             // Increasing the program counter to move onto the next instruction on the next loop
@@ -173,6 +178,11 @@ impl BrainfuckProgram {
     pub fn print_memory_array(&self) {
         println!();
         for i in 0..16 {
+            if i == self.pointer {
+                print!(">{}, ", self.memory_array[i]);
+                continue;
+            }
+
             print!("{}, ", self.memory_array[i]);
         }
         println!();
@@ -250,6 +260,11 @@ mod tests {
         program.program_counter = 2;
 
         assert_eq!(program.find_end_loop().unwrap(), 5);
+
+        // See find_begin_loop_works for why this currently fails
+        program.program_counter = 0;
+
+        assert_eq!(program.find_end_loop().unwrap(), 6);
     }
 
     #[test]
@@ -290,6 +305,12 @@ mod tests {
         program.program_counter = 5;
 
         assert_eq!(program.find_begin_loop().unwrap(), 2);
+
+        // This has been the problem all along... this method doesn't account for if there are loop
+        // begginings before the one this one closes...
+        program.program_counter = 6;
+
+        assert_eq!(program.find_begin_loop().unwrap(), 0);
     }
 
     #[test]

@@ -17,6 +17,8 @@ use utf8_read::Reader;
 
 use std::fs::File;
 
+use std::process;
+
 #[derive(Parser, Debug)]
 /// A brainfuck interpreter written in rust!
 #[clap(author, version, about)]
@@ -45,6 +47,8 @@ fn file_to_instructions(filename: String) -> Vec<BrainfuckInstructions> {
 
     let mut reader = Reader::new(&file);
 
+    let mut loop_level: u8 = 0;
+
     for char in reader.into_iter() {
         let char = char.expect("Couldn't read char?");
         match char {
@@ -52,8 +56,21 @@ fn file_to_instructions(filename: String) -> Vec<BrainfuckInstructions> {
             '<' => instructions_vec.push(DecreasePointer),
             '+' => instructions_vec.push(IncreaseValue),
             '-' => instructions_vec.push(DecreaseValue),
-            '[' => instructions_vec.push(BeginLoop),
-            ']' => instructions_vec.push(EndLoop),
+            '[' => {
+                loop_level += 1;
+                instructions_vec.push(BeginLoop(loop_level));
+            },
+            ']' => {
+                // adding the endloop before taking away the loop level
+                instructions_vec.push(EndLoop(loop_level));
+
+                // If the loop level is 0 then there is no loop beginning
+                if loop_level == 0 {
+                    println!("LOOP END HAS NO BEGININNG");
+                    process::exit(1);
+                }
+                loop_level -= 1;
+            },
             '.' => instructions_vec.push(PrintCell),
             ',' => instructions_vec.push(WriteToCell),
             // Ignore all other chars

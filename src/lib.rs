@@ -8,8 +8,8 @@ pub enum BrainfuckInstructions {
     DecreasePointer, // <
     IncreaseValue,   // +
     DecreaseValue,   // -
-    BeginLoop,       // [
-    EndLoop,         // ]
+    BeginLoop(u8),   // [
+    EndLoop(u8),     // ]
     WriteToCell,     // ,
     PrintCell,       // .
 }
@@ -99,26 +99,28 @@ impl BrainfuckProgram {
                 }
 
                 // [ Instruction
-                BeginLoop => {
+                BeginLoop(level) => {
                     // Jump to the instruction after the matching ] if the current cell is zero
                     if self.memory_array[self.pointer] == 0 {
                         // By setting the pc to the location of the next ] the program counter will
                         // increment at the end of this match statment to the instruction after it
-                        self.program_counter = self.find_end_loop().unwrap();
+                        self.program_counter = self.find_end_loop(level).unwrap();
                         if debug {
                             println!("Jumped!");
                         }
                         continue;
                     }
-                    println!("Begin Loop!");
+                    if debug {
+                        println!("Begin Loop!");
+                    }
                 }
 
                 // ] Instruction
-                EndLoop => {
+                EndLoop(level) => {
                     // Jump if the current cell is not equal to zero and skip to the next iteration
                     // of the loop
                     if self.memory_array[self.pointer] != 0 {
-                        self.program_counter = self.find_begin_loop().unwrap();
+                        self.program_counter = self.find_begin_loop(level).unwrap();
                         if debug {
                             println!("Looped!");
                         }
@@ -150,11 +152,16 @@ impl BrainfuckProgram {
     }
 
     /// Finds the closest ] instruction to the program counter
-    fn find_end_loop(&self) -> Option<usize> {
+    fn find_end_loop(&self, current_level: u8) -> Option<usize> {
         // Looping through all the instructions
         for i in self.program_counter..self.instructions.len() {
             match self.instructions[i] {
-                EndLoop => return Some(i),
+                EndLoop(level) => {
+                    // If the loops are the same level then they are matching
+                    if level == current_level {
+                        return Some(i);
+                    }
+                }
                 _ => continue,
             }
         }
@@ -163,11 +170,15 @@ impl BrainfuckProgram {
     }
 
     /// Finds the closest [ instruction above the program_counter
-    fn find_begin_loop(&self) -> Option<usize> {
+    fn find_begin_loop(&self, current_level: u8) -> Option<usize> {
         // Looping through all the instructions
         for i in (0..self.program_counter).rev() {
             match self.instructions[i] {
-                BeginLoop => return Some(i),
+                BeginLoop(level) => {
+                    if level == current_level {
+                        return Some(i);
+                    }
+                }
                 _ => continue,
             }
         }
@@ -214,8 +225,8 @@ mod tests {
             DecreasePointer,
             IncreaseValue,
             DecreaseValue,
-            BeginLoop,
-            EndLoop,
+            BeginLoop(1),
+            EndLoop(1),
             WriteToCell,
             PrintCell,
         ];
@@ -229,29 +240,29 @@ mod tests {
     /// Tests if the find_end_loop method works
     fn find_end_loop_works() {
         let instructions = vec![
-            BeginLoop,
+            BeginLoop(1),
             IncreaseValue,
             IncreasePointer,
-            EndLoop,
+            EndLoop(1),
             IncreaseValue,
         ];
 
         let program = BrainfuckProgram::new(instructions);
 
-        assert_eq!(program.find_end_loop().unwrap(), 3);
+        assert_eq!(program.find_end_loop(1).unwrap(), 3);
     }
 
     #[test]
     /// Tests if the find_end_loop method works with nested loops
     fn find_end_loop_nested_works() {
         let instructions = vec![
-            BeginLoop,
+            BeginLoop(1),
             IncreaseValue,
-            BeginLoop,
+            BeginLoop(2),
             IncreasePointer,
             IncreaseValue,
-            EndLoop,
-            EndLoop,
+            EndLoop(2),
+            EndLoop(1),
             IncreaseValue,
         ];
 
@@ -259,12 +270,12 @@ mod tests {
 
         program.program_counter = 2;
 
-        assert_eq!(program.find_end_loop().unwrap(), 5);
+        assert_eq!(program.find_end_loop(2).unwrap(), 5);
 
         // See find_begin_loop_works for why this currently fails
         program.program_counter = 0;
 
-        assert_eq!(program.find_end_loop().unwrap(), 6);
+        assert_eq!(program.find_end_loop(1).unwrap(), 6);
     }
 
     #[test]
@@ -272,10 +283,10 @@ mod tests {
     fn find_begin_loop_works() {
         // testing with the begin loop at the start
         let instructions = vec![
-            BeginLoop,
+            BeginLoop(1),
             IncreaseValue,
             IncreasePointer,
-            EndLoop,
+            EndLoop(1),
             IncreaseValue,
         ];
 
@@ -283,20 +294,20 @@ mod tests {
 
         program.program_counter = 3;
 
-        assert_eq!(program.find_begin_loop().unwrap(), 0);
+        assert_eq!(program.find_begin_loop(1).unwrap(), 0);
     }
 
     #[test]
     /// Tests if the find_end_loop method works with nested loops
     fn find_begin_loop_nested_works() {
         let instructions = vec![
-            BeginLoop,
+            BeginLoop(1),
             IncreaseValue,
-            BeginLoop,
+            BeginLoop(2),
             IncreasePointer,
             IncreaseValue,
-            EndLoop,
-            EndLoop,
+            EndLoop(2),
+            EndLoop(1),
             IncreaseValue,
         ];
 
@@ -304,13 +315,13 @@ mod tests {
 
         program.program_counter = 5;
 
-        assert_eq!(program.find_begin_loop().unwrap(), 2);
+        assert_eq!(program.find_begin_loop(2).unwrap(), 2);
 
         // This has been the problem all along... this method doesn't account for if there are loop
         // begginings before the one this one closes...
         program.program_counter = 6;
 
-        assert_eq!(program.find_begin_loop().unwrap(), 0);
+        assert_eq!(program.find_begin_loop(1).unwrap(), 0);
     }
 
     #[test]
@@ -374,7 +385,7 @@ mod tests {
             IncreaseValue,
             IncreaseValue,
             // Entering the loop
-            BeginLoop,
+            BeginLoop(1),
             // Adding second to the next cell
             IncreasePointer,
             IncreaseValue,
@@ -395,7 +406,7 @@ mod tests {
             IncreaseValue,
             DecreasePointer,
             DecreaseValue,
-            EndLoop,
+            EndLoop(1),
         ];
 
         let mut program = BrainfuckProgram::new(instructions);
@@ -417,12 +428,12 @@ mod tests {
             IncreaseValue, // 3
             IncreaseValue,
             IncreaseValue,
-            BeginLoop,
+            BeginLoop(1),
             DecreaseValue,
             DecreasePointer,
             IncreaseValue,
             IncreasePointer,
-            EndLoop,
+            EndLoop(1),
         ];
 
         // Creating the Brainfuck program and running it
@@ -438,10 +449,10 @@ mod tests {
     /// Tests if BeginLoop jumpts
     fn begin_loop_jumps_if_cell_is_zero() {
         let instructions = vec![
-            BeginLoop,
+            BeginLoop(1),
             // This will create an infinite loop if this loop is not skipped
             IncreaseValue,
-            EndLoop,
+            EndLoop(1),
             DecreaseValue,
         ];
 

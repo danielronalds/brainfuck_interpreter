@@ -15,7 +15,7 @@ pub enum BrainfuckInstructions {
 }
 
 /// Const for how large the array is
-const MEMORY_ARRAY_LENGTH: usize = 30000;
+const MEMORY_ARRAY_LENGTH: usize = 300;
 
 /// Struct to represent Brainfuck program
 pub struct BrainfuckProgram {
@@ -50,6 +50,10 @@ impl BrainfuckProgram {
 
     /// Runs the brainfuck program
     pub fn run(&mut self, debug: bool) {
+        if debug {
+            println!("{:#?}", &self.instructions);
+        }
+
         // This will run the program until the end of the instructions is run. We can't just loop
         // through them as loops will not work
         while self.program_counter != self.instructions.len() {
@@ -58,8 +62,8 @@ impl BrainfuckProgram {
                 IncreasePointer => {
                     if self.pointer < (MEMORY_ARRAY_LENGTH - 1) {
                         self.pointer += 1;
-                    } else {
-                        println!("ERROR, cannot increase pointer!");
+                    } else if debug {
+                        println!("ERROR, cannot increase pointer! PC: {}", self.program_counter);
                     }
                 }
 
@@ -67,8 +71,8 @@ impl BrainfuckProgram {
                 DecreasePointer => {
                     if self.pointer != 0 {
                         self.pointer -= 1;
-                    } else {
-                        println!("ERROR, cannot decrease pointer!");
+                    } else if debug {
+                        println!("ERROR, cannot decrease pointer! PC: {}", self.program_counter);
                     }
                 }
 
@@ -101,6 +105,9 @@ impl BrainfuckProgram {
                         // By setting the pc to the location of the next ] the program counter will
                         // increment at the end of this match statment to the instruction after it
                         self.program_counter = self.find_end_loop().unwrap();
+                        if debug {
+                            println!("Jumped!");
+                        }
                         continue;
                     }
                 }
@@ -111,6 +118,9 @@ impl BrainfuckProgram {
                     // of the loop
                     if self.memory_array[self.pointer] != 0 {
                         self.program_counter = self.find_begin_loop().unwrap();
+                        if debug {
+                            println!("Looped!");
+                        }
                         continue;
                     }
                 }
@@ -122,7 +132,7 @@ impl BrainfuckProgram {
                     print!("{}", num as char)
                 }
 
-                _ => (),
+                WriteToCell => (),
             }
 
             // Increasing the program counter to move onto the next instruction on the next loop

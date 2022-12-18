@@ -49,7 +49,7 @@ impl BrainfuckProgram {
     }
 
     /// Runs the brainfuck program
-    pub fn run(&mut self) {
+    pub fn run(&mut self, debug: bool) {
         // This will run the program until the end of the instructions is run. We can't just loop
         // through them as loops will not work
         while self.program_counter != self.instructions.len() {
@@ -58,6 +58,8 @@ impl BrainfuckProgram {
                 IncreasePointer => {
                     if self.pointer < (MEMORY_ARRAY_LENGTH - 1) {
                         self.pointer += 1;
+                    } else {
+                        println!("ERROR, cannot increase pointer!");
                     }
                 }
 
@@ -65,6 +67,8 @@ impl BrainfuckProgram {
                 DecreasePointer => {
                     if self.pointer != 0 {
                         self.pointer -= 1;
+                    } else {
+                        println!("ERROR, cannot decrease pointer!");
                     }
                 }
 
@@ -98,7 +102,7 @@ impl BrainfuckProgram {
                         // increment at the end of this match statment to the instruction after it
                         self.program_counter = self.find_end_loop().unwrap();
                         continue;
-                    } 
+                    }
                 }
 
                 // ] Instruction
@@ -124,7 +128,10 @@ impl BrainfuckProgram {
             // Increasing the program counter to move onto the next instruction on the next loop
             self.program_counter += 1;
         }
-        self.print_memory_array();
+
+        if debug {
+            self.print_memory_array();
+        }
     }
 
     /// Finds the closest ] instruction to the program counter
@@ -294,7 +301,7 @@ mod tests {
 
         // Creating the Brainfuck program and running it
         let mut program = BrainfuckProgram::new(instructions);
-        program.run();
+        program.run(false);
 
         // Writing the expected state of the memory array
         let mut expected_array: [u8; MEMORY_ARRAY_LENGTH] = [0; MEMORY_ARRAY_LENGTH];
@@ -308,39 +315,61 @@ mod tests {
     #[test]
     fn overflow_works() {
         // Testing 0 - 1 = 255
-        let instructions = vec![
-            DecreaseValue,
-        ];
+        let instructions = vec![DecreaseValue];
 
         let mut program = BrainfuckProgram::new(instructions);
 
-        program.run();
+        program.run(false);
 
         assert_eq!(program.memory_array[0], 255);
 
         // Tesing 255 + 1 = 0
         let instructions = vec![
             // Setting the current cell to 16
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
             // Entering the loop
             BeginLoop,
             // Adding second to the next cell
             IncreasePointer,
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
-            IncreaseValue, IncreaseValue, IncreaseValue, IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
+            IncreaseValue,
             DecreasePointer,
             DecreaseValue,
-            EndLoop
+            EndLoop,
         ];
 
         let mut program = BrainfuckProgram::new(instructions);
 
-        program.run();
+        program.run(false);
 
         assert_eq!(program.memory_array[1], 0)
     }
@@ -367,7 +396,7 @@ mod tests {
 
         // Creating the Brainfuck program and running it
         let mut program = BrainfuckProgram::new(sum_two_numbers);
-        program.run();
+        program.run(false);
 
         // Asserting that the program ran as expected
         assert_eq!(program.memory_array[0], 5);
@@ -382,11 +411,11 @@ mod tests {
             // This will create an infinite loop if this loop is not skipped
             IncreaseValue,
             EndLoop,
-            DecreaseValue
+            DecreaseValue,
         ];
 
         let mut program = BrainfuckProgram::new(instructions);
-        program.run();
+        program.run(false);
 
         assert_eq!(program.memory_array[0], 255);
     }

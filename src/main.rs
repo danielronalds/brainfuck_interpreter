@@ -23,6 +23,9 @@ use std::fs::File;
 pub struct Args {
     /// The brainfuck program file
     filename: String,
+    /// Whether to debug or not
+    #[arg(long)]
+    debug: bool
 }
 
 fn main() {
@@ -32,7 +35,7 @@ fn main() {
 
     let mut program = BrainfuckProgram::new(instructions);
 
-    program.run();
+    program.run(args.debug);
 }
 
 fn file_to_instructions(filename: String) -> Vec<BrainfuckInstructions> {

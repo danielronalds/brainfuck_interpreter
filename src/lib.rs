@@ -64,12 +64,14 @@ impl BrainfuckProgram {
                         self.pointer += 1;
                     }
                 }
+
                 // < Instruction
                 DecreasePointer => {
                     if self.pointer != 0 {
                         self.pointer -= 1;
                     }
                 }
+
                 // + Instruction
                 IncreaseValue => {
                     if self.memory_array[self.pointer] == u8::MAX {
@@ -80,6 +82,7 @@ impl BrainfuckProgram {
                         self.memory_array[self.pointer] += 1;
                     }
                 }
+
                 // - Instruction
                 DecreaseValue => {
                     if self.memory_array[self.pointer] == 0 {
@@ -90,46 +93,35 @@ impl BrainfuckProgram {
                         self.memory_array[self.pointer] -= 1;
                     }
                 }
+
                 // [ Instruction
                 BeginLoop => {
-                    // Jump if zero
+                    // Jump to the instruction after the matching ] if the current cell is zero
                     if self.memory_array[self.pointer] == 0 {
-                        let index = self.program_counter;
-
-                        for instruction in index..self.instructions.len() {
-                            match self.instructions[instruction] {
-                                EndLoop => {
-                                    // Set the program counter to the found ]
-                                    self.program_counter = instruction;
-                                    // Clear this from the return_address_vec
-                                    self.pop_last_return_address();
-                                },
-                                _ => continue,
-                            }
-                        }
-                    }
-                    // Adding the value of this instruction to the vec of return address.
-                    // A vec is used so that nested loops work
-                    self.return_address_vec.push(self.program_counter);
+                        // By setting the pc to the location of the next ] the program counter will
+                        // increment at the end of this match statment to the instruction after it
+                        self.program_counter = self.find_end_loop().unwrap();
+                        continue;
+                    } 
                 }
+
                 // ] Instruction
                 EndLoop => {
-                    // If the current cell is not = to 0 then loop
+                    // Jump if the current cell is not equal to zero and skip to the next iteration
+                    // of the loop
                     if self.memory_array[self.pointer] != 0 {
-                        // Setting the program counter back to the start of the loop. An unwrap is
-                        // okay here because if the EndLoop is reached self.pop_last_return_address
-                        // should always return a Some()
-                        self.program_counter = self.pop_last_return_address().unwrap();
-                        // Skiping the rest of the loop so that the program counter is not
-                        // incremented
+                        self.program_counter = self.find_begin_loop().unwrap();
                         continue;
                     }
                 }
+
                 // . Instruction
                 // NEED TO TEST THIS, I dont actually know if this works or not
                 PrintCell => {
-                    print!("{}", self.memory_array[self.pointer] as char);
+                    let num = self.memory_array[self.pointer];
+                    print!("{}", num as char)
                 }
+
                 _ => (),
             }
 
@@ -139,19 +131,30 @@ impl BrainfuckProgram {
         self.print_memory_array();
     }
 
-    /// Pops of the last return address added and returns it
-    fn pop_last_return_address(&mut self) -> Option<usize> {
-        if self.return_address_vec.len() == 0 {
-            return None;
+    /// Finds the closest ] instruction to the program counter
+    fn find_end_loop(&self) -> Option<usize> {
+        // Looping through all the instructions
+        for i in self.program_counter..self.instructions.len() {
+            match self.instructions[i] {
+                EndLoop => return Some(i),
+                _ => continue,
+            }
         }
-        // Getting the index
-        let index = self.return_address_vec.len() - 1;
 
-        // Cloning the return address and removing it
-        let return_address = self.return_address_vec[index];
-        self.return_address_vec.remove(index);
+        None
+    }
 
-        Some(return_address)
+    /// Finds the closest [ instruction above the program_counter
+    fn find_begin_loop(&self) -> Option<usize> {
+        // Looping through all the instructions
+        for i in (0..self.program_counter).rev() {
+            match self.instructions[i] {
+                BeginLoop => return Some(i),
+                _ => continue,
+            }
+        }
+
+        None
     }
 
     pub fn print_memory_array(&self) {
@@ -200,20 +203,80 @@ mod tests {
     }
 
     #[test]
-    /// tests if the pop_last_return_address method works
-    fn pop_last_return_address_works() {
-        let instructions = Vec::new();
+    /// Tests if the find_end_loop method works
+    fn find_end_loop_works() {
+        let instructions = vec![
+            BeginLoop,
+            IncreaseValue,
+            IncreasePointer,
+            EndLoop,
+            IncreaseValue,
+        ];
+
+        let program = BrainfuckProgram::new(instructions);
+
+        assert_eq!(program.find_end_loop().unwrap(), 3);
+    }
+
+    #[test]
+    /// Tests if the find_end_loop method works with nested loops
+    fn find_end_loop_nested_works() {
+        let instructions = vec![
+            BeginLoop,
+            IncreaseValue,
+            BeginLoop,
+            IncreasePointer,
+            IncreaseValue,
+            EndLoop,
+            EndLoop,
+            IncreaseValue,
+        ];
 
         let mut program = BrainfuckProgram::new(instructions);
 
-        program.return_address_vec.push(1);
-        program.return_address_vec.push(2);
-        program.return_address_vec.push(4);
+        program.program_counter = 2;
 
-        let return_address = program.pop_last_return_address();
+        assert_eq!(program.find_end_loop().unwrap(), 5);
+    }
 
-        assert_eq!(return_address, 4);
-        assert_eq!(vec![1, 2], program.return_address_vec)
+    #[test]
+    /// Tests if the find_begin_loop method works
+    fn find_begin_loop_works() {
+        // testing with the begin loop at the start
+        let instructions = vec![
+            BeginLoop,
+            IncreaseValue,
+            IncreasePointer,
+            EndLoop,
+            IncreaseValue,
+        ];
+
+        let mut program = BrainfuckProgram::new(instructions);
+
+        program.program_counter = 3;
+
+        assert_eq!(program.find_begin_loop().unwrap(), 0);
+    }
+
+    #[test]
+    /// Tests if the find_end_loop method works with nested loops
+    fn find_begin_loop_nested_works() {
+        let instructions = vec![
+            BeginLoop,
+            IncreaseValue,
+            BeginLoop,
+            IncreasePointer,
+            IncreaseValue,
+            EndLoop,
+            EndLoop,
+            IncreaseValue,
+        ];
+
+        let mut program = BrainfuckProgram::new(instructions);
+
+        program.program_counter = 5;
+
+        assert_eq!(program.find_begin_loop().unwrap(), 2);
     }
 
     #[test]

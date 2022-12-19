@@ -34,6 +34,8 @@ pub struct BrainfuckProgram {
 
 use BrainfuckInstructions::*;
 
+use console::Term;
+
 impl BrainfuckProgram {
     /// Creates a new BrainfuckProgram
     ///
@@ -50,6 +52,8 @@ impl BrainfuckProgram {
 
     /// Runs the brainfuck program
     pub fn run(&mut self, debug: bool) {
+        let term = Term::stdout();
+
         if debug {
             println!("{:#?}", &self.instructions);
         }
@@ -63,7 +67,10 @@ impl BrainfuckProgram {
                     if self.pointer != (MEMORY_ARRAY_LENGTH - 1) {
                         self.pointer += 1;
                     } else if debug {
-                        println!("ERROR, cannot increase pointer! PC: {}", self.program_counter);
+                        println!(
+                            "ERROR, cannot increase pointer! PC: {}",
+                            self.program_counter
+                        );
                     }
                 }
 
@@ -72,7 +79,10 @@ impl BrainfuckProgram {
                     if self.pointer != 0 {
                         self.pointer -= 1;
                     } else if debug {
-                        println!("ERROR, cannot decrease pointer! PC: {}", self.program_counter);
+                        println!(
+                            "ERROR, cannot decrease pointer! PC: {}",
+                            self.program_counter
+                        );
                     }
                 }
 
@@ -129,13 +139,22 @@ impl BrainfuckProgram {
                 }
 
                 // . Instruction
-                // NEED TO TEST THIS, I dont actually know if this works or not
-                PrintCell => {
-                    let num = self.memory_array[self.pointer];
-                    print!("{}", num as char)
-                }
+                PrintCell => print!("{}", self.memory_array[self.pointer] as char),
+                
 
-                WriteToCell => (),
+                WriteToCell => {
+                    // This unwrap is probably not the best...
+                    let mut char = term.read_char().unwrap();
+
+                    // Makes sure the input char is an ascii char
+                    while !char.is_ascii() {
+                        println!("That char is not an ascii char!");
+                        char = term.read_char().unwrap();
+                    }
+
+                    // Writing the char to the current cell
+                    self.memory_array[self.pointer] = char as u8;
+                }
             }
 
             if debug {

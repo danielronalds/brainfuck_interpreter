@@ -26,6 +26,7 @@ cargo build
 
 To run a brainfuck program simply run the program with the path to the file. In the following 
 example the brainfuck program we'll run is called if_else.bf, located in our current directory
+
 ```
 brainfuck_interpreter if_else.bf
 ```
@@ -36,16 +37,20 @@ To produce a log of the brainfuck program, run the program using the debug flag.
 state of the memory tape after every instruction to the console, as well as when a loop is run. 
 Using the previous example, running the program would use the following command
 
+
 ```
 brainfuck_interpreter --debug if_else.bf
 ```
+
 The placement of the flag does not matter, so the following also works
+
 
 ```
 brainfuck_interpreter if_else.bf --debug
 ```
 
 This by itself is not particularly useful, however the output can be written to a file like so
+
 ```
 brainfuck_interpreter if_else.bf --debug > bf_log.txt
 ```
